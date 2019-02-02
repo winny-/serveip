@@ -1,0 +1,22 @@
+* serveip
+
+  Simple HTTP microservice to respond with the client's IP.
+
+** Caveats
+
+   - [[https://github.com/docker/for-linux/issues/182][It does not work in Docker]]. One gets back the Docker bridge's address.
+
+** Usage
+
+   #+BEGIN_SRC sh
+   raco pkg install --link --auto  # Install from git.
+
+   serveip --log-file requests.log :: 8080 # Log to `requests.log' and listen on all addresses on port 8080.
+   racket -l serveip -m -- --log-file requests.log :: 8080 # Same if your user racket binaries path is not in PATH.
+
+   curl localhost:8080 # Get your IP address.
+   #+END_SRC
+
+** License
+
+   MIT. See [[file:LICENSE][LICENSE]].
