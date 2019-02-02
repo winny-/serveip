@@ -12,7 +12,7 @@
    raco pkg install --link --auto  # Install from git.
 
    serveip --log-file requests.log :: 8080 # Log to `requests.log' and listen on all addresses on port 8080.
-   racket -l serveip -m -- --log-file requests.log :: 8080 # Same if your user racket binaries path is not in PATH.
+   racket -l serveip -- --log-file requests.log :: 8080 # Without user scope script path in $PATH.
 
    curl localhost:8080 # Get your IP address.
    #+END_SRC
