@@ -1,15 +1,17 @@
 #lang racket
 
-(require web-server/servlet)
+(require web-server/servlet web-server/http srfi/2)
 (provide start-serveip)
 
+; Get around the edge-case that client-ip was actually `::ffff:192.168.1.1'
+; when listening on special address `::'.
+(define (real-ip address)
+  (match address
+    [(pregexp #px"(?i::ffff:([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+))"
+              (list _ ipv4)) ipv4]
+    [a a]))
+
 (define (start-serveip req)
-  ; Get around the edge-case that client-ip was actually `::ffff:192.168.1.1'
-  ; when listening on special address `::'.
-  (define client-ip (match (request-client-ip req)
-                      [(pregexp #px"(?i::ffff:([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+))"
-                                (list _ ipv4)) ipv4]
-                      [a a]))
   (response/full 200
                  #"OK"
                  (current-seconds)
@@ -17,7 +19,11 @@
                  empty
                  (list
                   (string->bytes/utf-8
-                   (string-append client-ip
+                   (string-append (real-ip (or (and-let* ([h (assoc 'x-forwarded-for (request-headers req))]
+                                                          [ip (car (string-split (cdr h) #rx", *"))]
+                                                          [(non-empty-string? ip)])
+                                                         ip)
+                                               (request-client-ip req)))
                                   "\n")))))
 
 (module+ main
@@ -26,7 +32,7 @@
   (define (get-configuration cli-default-parameter env-var default-value [after-proc identity])
     (after-proc (or (cli-default-parameter) (getenv env-var) default-value)))
   (void (with-handlers ([exn:fail:filesystem? identity])
-    (dotenv-load!)))
+          (dotenv-load!)))
   (define LOG-FILE (make-parameter #f))
   (define ADDRESS (make-parameter #f))
   (define PORT (make-parameter #f))
